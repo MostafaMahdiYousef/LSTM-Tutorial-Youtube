@@ -1,0 +1,80 @@
+# FNN Model
+sequence_length = 3
+X, y = [], []
+for i in range(len(temps_scaled) - sequence_length):
+    X.append(temps_scaled[i:i + sequence_length])
+    y.append(temps_scaled[i + sequence_length])
+
+X = np.array(X)
+y = np.array(y)
+split_index = int(len(X) * 0.8)
+X_train, X_test = X[:split_index], X[split_index:]
+y_train, y_test = y[:split_index], y[split_index:]
+
+model = tf.keras.Sequential([
+    tf.keras.layers.InputLayer(shape=(sequence_length,)),
+    tf.keras.layers.Dense(64, activation='relu'),
+    tf.keras.layers.Dense(32, activation='relu'),
+    tf.keras.layers.Dense(1)
+])
+model.compile(optimizer='adam', loss='mse')
+model.fit(X_train, y_train, epochs=100, validation_split=0.1, verbose=1)
+
+y_pred = model.predict(X_test)
+y_pred_rescaled = scaler.inverse_transform(y_pred)
+y_test_rescaled = scaler.inverse_transform(y_test.reshape(-1, 1))
+plt.figure(figsize=(10, 4))
+plt.plot(y_test_rescaled, label="True Temp")
+plt.plot(y_pred_rescaled, label="Predicted Temp")
+plt.xlabel("Days")
+plt.ylabel("Avg Temperature (°C)")
+plt.title("FNN Weather Forecast - Algiers")
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
+last_input = temps_scaled[-sequence_length:].reshape(1, -1)
+next_day_scaled = model.predict(last_input)
+next_day = scaler.inverse_transform(next_day_scaled)
+print("Predicted next day's temperature:", round(next_day[0][0], 2), "°C")
+
+# GRU Model
+sequence_length = 2
+X, y = [], []
+for i in range(len(temps_scaled) - sequence_length):
+    X.append(temps_scaled[i:i + sequence_length])
+    y.append(temps_scaled[i + sequence_length])
+
+X = np.array(X).reshape((len(X), sequence_length, 1))
+y = np.array(y)
+split_index = int(len(X) * 0.8)
+X_train, X_test = X[:split_index], X[split_index:]
+y_train, y_test = y[:split_index], y[split_index:]
+
+model = tf.keras.Sequential([
+    tf.keras.layers.InputLayer(shape=(sequence_length, 1)),
+    tf.keras.layers.GRU(64, return_sequences=True),
+    tf.keras.layers.GRU(32),
+    tf.keras.layers.Dense(1)
+])
+model.compile(optimizer='adam', loss='mse')
+model.fit(X_train, y_train, epochs=100, verbose=1, validation_split=0.1)
+
+y_pred = model.predict(X_test)
+y_pred_rescaled = scaler.inverse_transform(y_pred)
+plt.figure(figsize=(10, 4))
+plt.plot(y_test_rescaled, label="True Temp")
+plt.plot(y_pred_rescaled, label="Predicted Temp")
+plt.xlabel("Days")
+plt.ylabel("Avg Temperature (°C)")
+plt.title("GRU Weather Forecast - Algiers")
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
+last_seq = temps_scaled[-sequence_length:].reshape((1, sequence_length, 1))
+next_day_pred_scaled = model.predict(last_seq)
+next_day_pred = scaler.inverse_transform(next_day_pred_scaled)
+print("Predicted next day's temperature:", round(next_day_pred[0][0], 2), "°C")
