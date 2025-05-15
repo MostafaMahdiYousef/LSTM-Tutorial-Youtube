@@ -1,7 +1,7 @@
-# Battery Temperature Forecasting
+#  Temperature Forecasting
 
 ## Overview
-This project provides implementations for predicting battery temperature using machine learning models:
+This project provides implementations for predicting temperature using Neural Networks:
 - **FNN (Feedforward Neural Network)**
 - **LSTM (Long Short-Term Memory Network)**
 
